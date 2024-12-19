@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Directory</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            background-color: #f9f9f9;
+            overflow-x: hidden; /* Prevent horizontal overflow */
+        }
+        header {
+            background-color: #594caf;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            width: 100%;
+        }
+        .filters {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .filters input, .filters select {
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+        #tableContainer {
+            overflow-x: auto;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex: 1;
+        }
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #594caf;
+            color: white;
+        }
+        footer {
+            background-color: #594caf;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+        }
+        footer a {
+            color: #ffdd57;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Alumni Directory</h1>
+    </header>
+
+    <div class="filters">
+        <input type="text" id="searchName" placeholder="Search by name" />
+        <input type="text" id="searchRollNumber" placeholder="Search by roll number" />
+        <select id="filterStream">
+            <option value="">All Streams</option>
+        </select>
+        <select id="filterBranch">
+            <option value="">All Branches</option>
+        </select>
+        <select id="filterGradYear">
+            <option value="">All Graduation Years</option>
+        </select>
+    </div>
+
+    <div id="tableContainer">
+        <table id="alumniTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Stream</th>
+                    <th>Branch</th>
+                    <th>Roll Number</th>
+                    <th>Graduation Year</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <p>Website created by <a href="https://github.com/Syed-Ausaf-Hasib" target="_blank">Syed Ausaf Hasib</a></p>
+    </footer>
+
+    <script>
+        const tableBody = document.querySelector("#alumniTable tbody");
+        const searchName = document.getElementById("searchName");
+        const searchRollNumber = document.getElementById("searchRollNumber");
+        const filterStream = document.getElementById("filterStream");
+        const filterBranch = document.getElementById("filterBranch");
+        const filterGradYear = document.getElementById("filterGradYear");
+        let alumniData = [];
+        let filteredData = [];
+
+        // Fetch the data from the JSON file
+        async function loadData() {
+            try {
+                const response = await fetch("alumniData.json");
+                alumniData = await response.json();
+                populateFilters(alumniData);
+                updateTable(alumniData);
+            } catch (error) {
+                console.error("Error loading data:", error);
+            }
+        }
+
+        // Populate the filter dropdowns
+        function populateFilters(data) {
+            const uniqueStreams = [...new Set(data.map(item => item.stream))];
+            const uniqueBranches = [...new Set(data.map(item => item.branch))];
+            const uniqueGradYears = [...new Set(data.map(item => item.gradYear))];
+
+            populateSelect(filterStream, uniqueStreams);
+            populateSelect(filterBranch, uniqueBranches);
+            populateSelect(filterGradYear, uniqueGradYears);
+        }
+
+        function populateSelect(selectElement, options) {
+            selectElement.innerHTML += options.map(option => `<option value="${option}">${option}</option>`).join("");
+        }
+
+        // Update the table with the filtered data
+        function updateTable(data) {
+            tableBody.innerHTML = data.map(row => `
+                <tr>
+                    <td>${row.name}</td>
+                    <td>${row.stream}</td>
+                    <td>${row.branch}</td>
+                    <td>${row.rollNumber}</td>
+                    <td>${row.gradYear}</td>
+                </tr>
+            `).join("");
+        }
+
+        // Apply all filters
+        function applyFilters() {
+            const nameSearch = searchName.value.toLowerCase();
+            const rollNumberSearch = searchRollNumber.value.toLowerCase();
+            const streamFilter = filterStream.value;
+            const branchFilter = filterBranch.value;
+            const gradYearFilter = filterGradYear.value;
+
+            filteredData = alumniData.filter(row => {
+                const matchesName = row.name.toLowerCase().includes(nameSearch);
+                const matchesRollNumber = row.rollNumber.toLowerCase().includes(rollNumberSearch);
+                const matchesStream = !streamFilter || row.stream === streamFilter;
+                const matchesBranch = !branchFilter || row.branch === branchFilter;
+                const matchesGradYear = !gradYearFilter || row.gradYear === gradYearFilter;
+                return matchesName && matchesRollNumber && matchesStream && matchesBranch && matchesGradYear;
+            });
+
+            updateTable(filteredData);
+        }
+
+        // Event listeners for filters
+        searchName.addEventListener("input", applyFilters);
+        searchRollNumber.addEventListener("input", applyFilters);
+        filterStream.addEventListener("change", applyFilters);
+        filterBranch.addEventListener("change", applyFilters);
+        filterGradYear.addEventListener("change", applyFilters);
+
+        // Load data on page load
+        document.addEventListener("DOMContentLoaded", loadData);
+    </script>
+</body>
+</html>
